@@ -39,7 +39,6 @@ EXAMPLES = '''
 
 from ansible.module_utils.basic import AnsibleModule
 import apt
-import json
 
 def main():
     
