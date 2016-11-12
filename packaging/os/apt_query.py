@@ -5,7 +5,7 @@ DOCUMENTATION = '''
 module: apt_query
 short_description: Query the installation status of packages using Apt.
 description:
-    - Returns the installation status and version number of a given package using Apt.
+    - Returns the installation status and version number of a given package using Apt, or versions for all installed packages. 
 options:
     name:
         description:
@@ -20,36 +20,21 @@ author: "George Buckerfield"
 notes:
 '''
 EXAMPLES = '''
+# Check the installed version of openssl
 - apt_query:
-        name: "{{ item }}"
-      with_items:
-        - openssl
-        - aptitude
-        - lolcat
-      register: status
+    name: openssl
+  register: query
 
-    - debug: msg={{ status }}
+# Display the version
+- debug: msg="{{ query.package_info['openssl'] }}"
 
-    - apt:
-        name: "{{ item.item }}"
-        state: present
-      become: yes
-      when: not item.installed
-      with_items: "{{ status.results }}"
-
-    - name: check if apache is installed
-      apt_query:
-        name: apache2
-      register: status
-
-    - debug: msg={{ status }}
-
-    - name: install apache if not present
-      apt:
-        name: apache2
-        state: present
-      become: yes
-      when: not status.installed
+# Do something if the version doesn't match a requirement
+- name: update openssl if necessary
+  apt:
+    name: openssl
+    state: latest
+  become: yes
+  when: query.package_info['openssl'] != "1.0.1f-1ubuntu2.21"
 '''
 
 from ansible.module_utils.basic import AnsibleModule
@@ -75,19 +60,18 @@ def main():
                 if cache[pkg.name].is_installed:
                     pkgver = cache[pkg.name].installed
                     packages[pkg.name] = pkgver.version
-            response = json.dumps(packages,sort_keys=True)
-            module.exit_json(changed=False, package_info=response)
+            module.exit_json(changed=False, package_info=packages)
         else:
             if cache[package].is_installed:
                 pkgver = cache[package].installed
                 packages[package] = pkgver.version
-                response = json.dumps(packages,sort_keys=True)
                 installed = True
             else:
-                response = json.dumps({package: "not installed"})
+                packages[package] = ""
                 installed = False
-            module.exit_json(changed=False, package_info=response, installed=installed)
+            module.exit_json(changed=False, package_info=packages, installed=installed)
     except KeyError:
-        module.fail_json(msg="The package '%s' was not found in the apt-cache" % package)
+        installed = False
+        module.exit_json(msg="The package '%s' was not found in the apt-cache" % package, installed=installed)
 if __name__ == '__main__':
     main()
