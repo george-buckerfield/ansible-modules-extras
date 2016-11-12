@@ -1,11 +1,30 @@
 #!/usr/bin/python
 
+# Copyright 2016 George Buckerfield <georgebuckerfield@gmail.com>
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 DOCUMENTATION = '''
 ---
 module: apt_query
 short_description: Query the installation status of packages using Apt.
 description:
     - Returns the installation status and version number of a given package using Apt, or versions for all installed packages. 
+version_added: 2.3
 options:
     name:
         description:
@@ -17,7 +36,7 @@ requirements:
    - python-apt
    - aptitude
 author: "George Buckerfield"
-notes:
+notes: []
 '''
 EXAMPLES = '''
 # Check the installed version of openssl
@@ -35,6 +54,19 @@ EXAMPLES = '''
     state: latest
   become: yes
   when: query.package_info['openssl'] != "1.0.1f-1ubuntu2.21"
+'''
+
+RETURN = '''
+installed:
+    description: is the package installed
+    returned: always
+    type: boolean
+    sample: True
+package_info:
+    description: package versions
+    returned: success
+    type: dict
+    sample: {"openssl": "1.0.1f-1ubuntu2.21", "aptitude": "0.6.8.2-1ubuntu4"}
 '''
 
 from ansible.module_utils.basic import AnsibleModule
